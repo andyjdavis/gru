@@ -1,10 +1,12 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "noEmit": false /* Do not emit outputs. */,
-        "importHelpers": true /* Import emit helpers from 'tslib'. */,
-        "noEmitHelpers": true,
-        "moduleResolution": "Node16",
+        "rootDir": "./src",
+        "noEmit": false,
+        "importHelpers": true,
+        "noEmitHelpers": false,
+        "module": "esnext",
+        "moduleResolution": "bundler",
         "skipLibCheck": true
     },
     "exclude": [
