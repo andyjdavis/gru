@@ -1,6 +1,6 @@
 import path from 'path'
 import os from 'os'
-import { spawn, SpawnOptions, ChildProcess } from 'child_process'
+import { spawn, ChildProcess } from 'child_process'
 
 import { consoleLogger, Levels } from 'typescript-log'
 
@@ -31,20 +31,20 @@ const dedicatedAndInlineWorkerCmd = getPath('dedicated-and-inline-worker')
 
 describe('with no start function', () => {
     it('throws an error', async () => {
-        const result = await run(throwsCmd, {})
+        const result = await run(throwsCmd)
         expect(result.stdout).toContain('Start function required')
     })
 })
 
 it('can run a worker inline', async () => {
-    const result = await run(inlineWorkerCmd, {})
+    const result = await run(inlineWorkerCmd)
     expect(result.stdout).toBe(`master output
 worker output
 `)
 })
 
 it('can run dedicated workers', async () => {
-    const result = await run(dedicatedWorkersCmd, {})
+    const result = await run(dedicatedWorkersCmd)
 
     // Dedicated worker start-up order is not guaranteed as inter-process communication is required
     expect(result.stdout).toContain('master output')
@@ -53,7 +53,7 @@ it('can run dedicated workers', async () => {
 })
 
 it('can run both dedicated and generic workers', async () => {
-    const result = await run(dedicatedAndGenericWorkersCmd, {})
+    const result = await run(dedicatedAndGenericWorkersCmd)
 
     expect(result.stdout).toContain('master output')
     expect(result.stdout).toContain('worker1 output')
@@ -64,7 +64,7 @@ it('can run both dedicated and generic workers', async () => {
 })
 
 it('can run both dedicated and an inline worker', async () => {
-    const result = await run(dedicatedAndInlineWorkerCmd, {})
+    const result = await run(dedicatedAndInlineWorkerCmd)
 
     expect(result.stdout).toContain('master output')
     expect(result.stdout).toContain('worker1 output')
@@ -75,7 +75,7 @@ it('can run both dedicated and an inline worker', async () => {
 })
 
 it('exits when inline worker fails to start', async () => {
-    const result = await run(inlineWorkerFailCmd, {})
+    const result = await run(inlineWorkerFailCmd)
     expect(result.stdout).toBe(`master
 worker
 ERROR { err: 'oops' } Inline worker failed to start, exiting
@@ -85,7 +85,7 @@ ERROR { err: 'oops' } Inline worker failed to start, exiting
 describe('with a start function and 3 workers', () => {
     describe('with lifetime of 0', () => {
         it('starts 3 workers that immediately exit', async () => {
-            const result = await run(exitCmd, {})
+            const result = await run(exitCmd)
             const starts = result.stdout.match(/worker$/gm)
 
             expect(starts).toHaveLength(3)
@@ -94,21 +94,21 @@ describe('with a start function and 3 workers', () => {
 
     describe('with lifetime of 500ms', () => {
         it('starts 3 workers repeatedly', async () => {
-            const result = await run(lifetimeCmd, {})
+            const result = await run(lifetimeCmd)
             const starts = result.stdout.match(/worker$/gm)
 
             expect(starts && starts.length).toBeGreaterThan(3)
         })
 
         it('keeps workers running for at least 500ms', async () => {
-            const result = await run(lifetimeCmd, {})
+            const result = await run(lifetimeCmd)
             expect(result.endTime - result.startTime).toBeGreaterThan(500)
         })
     })
 
     describe('with no lifetime specified', () => {
         it('starts 3 workers repeatedly', async () => {
-            const result = await run(infiniteCmd, {}, (child) =>
+            const result = await run(infiniteCmd, (child) =>
                 setTimeout(() => {
                     child.kill()
                 }, 2000)
@@ -120,7 +120,7 @@ describe('with a start function and 3 workers', () => {
         })
 
         it('keeps workers running until killed externally', async () => {
-            const result = await run(infiniteCmd, {}, (child) =>
+            const result = await run(infiniteCmd, (child) =>
                 setTimeout(() => child.kill(), 1000),
             )
 
@@ -131,7 +131,7 @@ describe('with a start function and 3 workers', () => {
 
 describe('with no worker count specified', () => {
     it('starts one worker for each cpu', async () => {
-        const result = await run(cpusCmd, {})
+        const result = await run(cpusCmd)
 
         const starts = result.stdout.match(/worker$/gm)
 
@@ -141,14 +141,14 @@ describe('with no worker count specified', () => {
 
 describe('with a master function and two workers', () => {
     it('starts one master', async () => {
-        const result = await run(masterCmd, {})
+        const result = await run(masterCmd)
         const master = result.stdout.match(/master/g)
 
         expect(master).toHaveLength(1)
     })
 
     it('starts two workers', async () => {
-        const result = await run(masterCmd, {})
+        const result = await run(masterCmd)
         const workers = result.stdout.match(/worker$/gm)
 
         expect(workers).toHaveLength(2)
@@ -158,7 +158,7 @@ describe('with a master function and two workers', () => {
 describe('signal handling', () => {
     describe('with 3 workers that exit gracefully', () => {
         it('starts 3 workers', async () => {
-            const result = await run(gracefulCmd, {}, (child) =>
+            const result = await run(gracefulCmd, (child) =>
                 setTimeout(() => {
                     child.kill()
                 }, 1000),
@@ -169,7 +169,7 @@ describe('signal handling', () => {
         })
 
         it('allows the workers to shut down', async () => {
-            const result = await run(gracefulCmd, {}, (child) =>
+            const result = await run(gracefulCmd, (child) =>
                 setTimeout(() => {
                     child.kill()
                 }, 1000),
@@ -182,21 +182,21 @@ describe('signal handling', () => {
 
     describe('with 3 workers that fail to exit', () => {
         it('starts 3 workers', async () => {
-            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 1000))
+            const result = await run(killCmd, (child) => setTimeout(() => child.kill(), 1000))
             const starts = result.stdout.match(/ah ha ha ha/g)
 
             expect(starts).toHaveLength(3)
         })
 
         it('notifies the workers that they should exit', async () => {
-            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 1000))
+            const result = await run(killCmd, (child) => setTimeout(() => child.kill(), 1000))
             const exits = result.stdout.match(/stayin alive/g)
 
             expect(exits).toHaveLength(3)
         })
 
         it('kills the workers after 250ms', async () => {
-            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 750))
+            const result = await run(killCmd, (child) => setTimeout(() => child.kill(), 750))
             expect(result.endTime - result.startTime - 1000).toBeLessThan(100)
         })
     })
@@ -204,7 +204,7 @@ describe('signal handling', () => {
 
 describe('master initialisation', () => {
     it('waits until master has initialised before starting children', async () => {
-        const result = await run(asyncMasterCmd, {})
+        const result = await run(asyncMasterCmd)
 
         expect(result.stdout).toBe(`master
  INFO Starting 2 workers
@@ -214,7 +214,7 @@ worker
     })
 
     it('can pass initialisation value to workers', async () => {
-        const result = await run(asyncMasterArgumentsCmd, {})
+        const result = await run(asyncMasterArgumentsCmd)
 
         expect(result.stdout).toBe(`master output
  INFO Starting 2 workers
@@ -224,13 +224,13 @@ worker received { test: 1, test2: [ 'val' ] }
     })
 
     it('exits process when master fails to initialise', async () => {
-        const result = await run(asyncMasterFailureCmd, {})
+        const result = await run(asyncMasterFailureCmd)
 
         expect(result.stdout).toMatch('Master failed to start')
     })
 
     it('exits process when master fails to initialise synchronously', async () => {
-        const result = await run(asyncMasterSyncFailureCmd, {})
+        const result = await run(asyncMasterSyncFailureCmd)
 
         expect(result.stdout).toMatch('Master failed to start')
     })
@@ -238,7 +238,7 @@ worker received { test: 1, test2: [ 'val' ] }
 
 describe('worker initialisation', () => {
     it('when worker fails to initialse, it is not restarted', async () => {
-        const result = await run(asyncWorkerFailureCmd, {})
+        const result = await run(asyncWorkerFailureCmd)
 
         expect(result.stdout).toMatch(
             new RegExp(`master
@@ -252,11 +252,16 @@ ERROR { err: 'Failed to start worker' } Worker \\d failed to start, shutting dow
     })
 })
 
-function run(file: string, options: SpawnOptions, spawned?: (child: ChildProcess) => void) {
+function run(file: string, spawned?: (child: ChildProcess) => void) {
     const childLogger = testLogger.child({ file })
 
     return new Promise<{ stdout: string; startTime: number; endTime: number }>((yea) => {
-        const child = spawn('node', [file], options)
+        const child = spawn('node', [file], {
+            env: {
+                FORCE_COLOR: '0',
+                NO_COLOR: '1',
+            }
+        })
 
         let stdout = ''
         const startTime = Date.now()
