@@ -2,19 +2,31 @@
     "name": "node-gru",
     "version": "1.3.1",
     "type": "module",
-    "main": "dist/cjs/index.js",
+    "main": "dist/cjs/index.cjs",
     "module": "dist/es2022/index.js",
     "license": "MIT",
     "scripts": {
         "build": "yarn build:es2022 && yarn build:cjs",
-        "build:es2022": "tsc -p ./tsconfig.build.json --target es2022 --module Node16 --outDir dist/es2022",
-        "build:cjs": "tsc -p ./tsconfig.build.json --target es2018 --module commonjs --moduleResolution node --outDir dist/cjs",
-        "pretest": "tsc -p src/fixtures --noEmit false",
+        "build:es2022": "tsc -p ./tsconfig.build.json --outDir dist/es2022",
+        "build:cjs": "tsc -p ./tsconfig.cjs.json --outDir dist/cjs",
+        "pretest": "tsc -p src/fixtures --emitDeclarationOnly false",
         "test": "NODE_OPTIONS='--experimental-vm-modules' yarn jest",
         "lint": "eslint --ext .js,.ts src",
         "verify": "yarn build && yarn test && yarn lint",
         "changeset": "changeset",
         "release": "yarn verify && changeset publish"
+    },
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/es2022/index.d.ts",
+                "default": "./dist/es2022/index.js"
+            },
+            "require": {
+                "types": "./dist/cjs/index.d.ts",
+                "default": "./dist/cjs/index.cjs"
+            }
+        }
     },
     "devDependencies": {
         "@changesets/cli": "^2.31.1",
@@ -24,6 +36,7 @@
         "@types/node": "^26.1.1",
         "@typescript-eslint/eslint-plugin": "^8.65.0",
         "@typescript-eslint/parser": "^8.65.0",
+        "@typescript/native": "npm:typescript@7.0.2",
         "eslint": "^10.8.0",
         "eslint-config-prettier": "^10.1.8",
         "jest": "^30.4.2",
@@ -31,7 +44,7 @@
         "prettier": "^3.9.6",
         "ts-jest": "^29.4.12",
         "tslib": "^2.8.1",
-        "typescript": "^5.8.3",
+        "typescript": "npm:@typescript/typescript6",
         "typescript-log": "^2.0.0"
     }
 }
